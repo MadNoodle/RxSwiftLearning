@@ -1,26 +1,44 @@
 //: Please build the scheme 'RxSwiftPlayground' first
 import RxSwift
 
-example(of: "never") {
+example(of: "PublishSubject") {
   
   let disposeBag = DisposeBag()
   
-  let observable = Observable<Any>.never()
+  let dealtHand = PublishSubject<[(String, Int)]>()
   
-
-  
-  observable.debug("DEBUG:", trimOutput: false)
-    .subscribe(
-    onNext: { element in
-      print(element)
-  },
-    onCompleted: {
-      print("Completed")
-  },
-    onDisposed: {
-      print("Disposed")
+  func deal(_ cardCount: UInt) {
+    var deck = cards
+    var cardsRemaining: UInt32 = 52
+    var hand = [(String, Int)]()
+    
+    for _ in 0..<cardCount {
+      let randomIndex = Int(arc4random_uniform(cardsRemaining))
+      hand.append(deck[randomIndex])
+      deck.remove(at: randomIndex)
+      cardsRemaining -= 1
+    }
+    
+    // Add code to update dealtHand here
+    if points(for: hand) > 21 {
+      dealtHand.onError(HandError.busted)
+    } else {
+      dealtHand.onNext(hand)
+    }
   }
-    ).disposed(by: disposeBag)
+  
+  // Add subscription to handSubject here
+  dealtHand
+    .subscribe(
+      onNext: {
+        print(cardString(for: $0), "for", points(for: $0), "points")
+    },
+      onError: {
+        print(String(describing: $0).capitalized)
+    })
+    .disposed(by: disposeBag)
+  
+  deal(3)
 }
 
 /*:
