@@ -60,7 +60,6 @@ class MainViewController: UIViewController {
     guard let preview = imagePreview.image else { return}
     
     PhotoWriter.save(preview)
-    .asSingle()
       .subscribe(
         onSuccess: { [weak self] id in
         self?.showMessage("Success", description: "Your image has been saved with id: \(id)")
@@ -95,9 +94,28 @@ class MainViewController: UIViewController {
     // show current photo count in navbar
     title = photos.count > 0 ? "\(photos.count) photos": "Collage"
   }
+  
   func showMessage(_ title: String, description: String? = nil) {
-    let alert = UIAlertController(title: title, message: description, preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: "Close", style: .default, handler: { [weak self] _ in self?.dismiss(animated: true, completion: nil)}))
-    present(alert, animated: true, completion: nil)
+    
+   alert(title: title, text: description)
+    .subscribe()
+    .disposed(by: bag)
+  }
+}
+
+extension UIViewController {
+  
+  func alert(title: String, text: String?) -> Completable {
+    return Completable.create { [weak self] completable in
+      let alertVC = UIAlertController(title: title, message: text, preferredStyle: .alert)
+      alertVC.addAction(UIAlertAction(title: "Close", style: .default, handler: {_ in
+        completable(.completed)
+      }))
+      
+      self?.present(alertVC, animated: true, completion: nil)
+      return Disposables.create {
+        self?.dismiss(animated: true, completion: nil)
+      }
+    }
   }
 }
